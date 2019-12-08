@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace Mpp_5Lab__DependencyInjectionContainer_
 {
-    public class Class1
+    class DependencyProvider : IDependencyProvider
     {
+        TDependency IDependencyProvider.Resolve<TDependency>()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
