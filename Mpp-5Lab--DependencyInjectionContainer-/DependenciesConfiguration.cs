@@ -19,12 +19,28 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
             where TDependency : class
             where TImplementation : TDependency
         {
-            throw new NotImplementedException();
+            Register(typeof(TDependency), typeof(TImplementation), lifetime);
         }
 
-        public void Register(Type service, Type serviceimpl, Lifetime lifetime)
+        public void Register(Type dependency, Type dependencyimpl, Lifetime lifetime)
         {
-            throw new NotImplementedException();
+            if (Validate(dependency, dependencyimpl) && RegisteredDependecies.Find(x => (x.TDependency == dependency && x.TImplementation == dependencyimpl)) == null)
+            {
+                Dependency _dependency = new Dependency(dependency, dependencyimpl, lifetime);
+                RegisteredDependecies.Add(_dependency);
+            }
+            else
+                throw new Exception("Dependency already registered");
+
+        }
+        public bool Validate(Type dependency, Type dependencyimpl)
+        {
+            if (dependencyimpl.IsAbstract || dependencyimpl.IsAbstract || !dependency.IsAssignableFrom(dependencyimpl))
+            {
+                throw new Exception("Incorrect dependency");
+            }
+            return true;
         }
     }
 }
+

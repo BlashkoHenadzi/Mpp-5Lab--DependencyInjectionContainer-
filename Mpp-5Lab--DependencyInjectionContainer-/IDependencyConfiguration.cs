@@ -12,6 +12,6 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
     {
         void Register<TDependency, TImplementation>(Lifetime lifetime) where TDependency : class
                                                       where TImplementation : TDependency;
-        void Register(Type service, Type serviceimpl,Lifetime lifetime);
+        void Register(Type dependency, Type dependencyimpl, Lifetime lifetime);
     }
 }
