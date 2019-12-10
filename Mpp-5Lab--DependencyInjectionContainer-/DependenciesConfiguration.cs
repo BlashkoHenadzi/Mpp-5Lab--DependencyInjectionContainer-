@@ -40,10 +40,6 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
                 Dependency _dependency = new Dependency(dependency, dependencyimpl, lifetime);
                 _dependencies.Add(_dependency);
             }
-
-            
-            
-
         }
         public IEnumerable<Dependency> GetDependencyImplementations(Type type)
         {
