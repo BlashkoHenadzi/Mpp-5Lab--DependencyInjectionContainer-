@@ -8,6 +8,7 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
 {
     interface IDependencyProvider
     {
-        object Resolve<TDependency>() where TDependency : class; 
+        object Resolve<TDependency>();
+
     }
 }

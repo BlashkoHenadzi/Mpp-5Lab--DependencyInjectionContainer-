@@ -20,7 +20,7 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
             recursionTypes = new ConcurrentDictionary<int, Stack<Type>>();
         }
 
-         public object Resolve<TDependency>() where TDependency:class
+        public object Resolve<TDependency>()
          {
             Stack<Type> types;
             if (recursionTypes.TryGetValue(Thread.CurrentThread.ManagedThreadId,out types))
@@ -33,6 +33,7 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
             }
             return Resolve(typeof(TDependency));
         }
+
 
         private object Resolve(Type type)
         {
@@ -61,7 +62,7 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
                 }
             }
 
-            return result;
+            return result.Count == 1 ? result[0] : result.ToArray(); ;
 
         }
 
@@ -101,7 +102,7 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
                     result.Add(dependencyInstance);
                 }
             }
-            return result;
+            return result.Count == 1 ? result[0] : result.ToArray(); ;
         }
             private object CreateByConstructor(Type type)
             {
@@ -119,10 +120,13 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
                         {
                             parameters.Add(Resolve(constructorParameter.ParameterType));
                         }
-                        instance = constructors[constructor].Invoke(parameters.ToArray());
+                    object[] para = parameters.ToArray();
+                        instance = constructors[constructor].Invoke(para);
                     }
-                    catch
-                    { }
+                    catch(Exception e)
+                    {
+                    
+                    }
                 }
 
                 recursionTypes[Thread.CurrentThread.ManagedThreadId].Pop();
