@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mpp_5Lab__DependencyInjectionContainer_
 {
-    enum Lifetime { InstPerDep, Singleton}
+    public enum Lifetime { InstPerDep, Singleton}
     
     interface IDependencyConfiguration
     {

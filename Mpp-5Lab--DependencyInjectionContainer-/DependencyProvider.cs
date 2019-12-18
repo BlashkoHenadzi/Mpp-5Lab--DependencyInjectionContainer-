@@ -2,13 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mpp_5Lab__DependencyInjectionContainer_
 {
-    class DependencyProvider : IDependencyProvider
+    public class DependencyProvider : IDependencyProvider
     {
         private readonly DependenciesConfiguration dependenciesConfiguration;
         private readonly ConcurrentDictionary<int,Stack<Type>> recursionTypes;
@@ -19,8 +20,8 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
             recursionTypes = new ConcurrentDictionary<int, Stack<Type>>();
         }
 
-        TDependency IDependencyProvider.Resolve<TDependency>()
-        {
+         public object Resolve<TDependency>() where TDependency:class
+         {
             Stack<Type> types;
             if (recursionTypes.TryGetValue(Thread.CurrentThread.ManagedThreadId,out types))
             {
@@ -30,7 +31,7 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
             {
                 recursionTypes[Thread.CurrentThread.ManagedThreadId] = new Stack<Type>();
             }
-            return (TDependency)Resolve(typeof(TDependency));
+            return Resolve(typeof(TDependency));
         }
 
         private object Resolve(Type type)
@@ -43,12 +44,89 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
 
         private object ResolveGeneric(Type type)
         {
-            throw new NotImplementedException();
+            List<object> result = new List<object>();
+            IEnumerable<Dependency> dependencies
+                = dependenciesConfiguration.GetDependencyImplementations(type)
+                .Where(impl => !recursionTypes[Thread.CurrentThread.ManagedThreadId].Contains(impl.TImplementation));
+
+            object instance;
+            foreach (Dependency dependencyimpl in dependencies)
+            {
+                instance = CreateByConstructor(dependencyimpl.TImplementation.GetGenericTypeDefinition()
+                    .MakeGenericType(type.GenericTypeArguments));
+
+                if (instance != null)
+                {
+                    result.Add(instance);
+                }
+            }
+
+            return result;
+
         }
 
         private object ResolveSimple(Type type)
         {
-            throw new NotImplementedException();
+
+            IEnumerable<Dependency> implementationContainers =
+                dependenciesConfiguration.GetDependencyImplementations(type)
+                .Where(impl => !recursionTypes[Thread.CurrentThread.ManagedThreadId].Contains(impl.TImplementation));
+
+            List<object> result = new List<object>();
+            object dependencyInstance;
+
+            foreach (Dependency container in implementationContainers)
+            {
+                if (container.lifetime == Lifetime.Singleton)
+                {
+                    if (container.TInstance == null)
+                    {
+                        lock (container)
+                        {
+                            if (container.TInstance == null)
+                            {
+                                container.TInstance = CreateByConstructor(container.TImplementation);
+                            }
+                        }
+                    }
+                    dependencyInstance = container.TInstance;
+                }
+                else
+                {
+                    dependencyInstance = CreateByConstructor(container.TImplementation);
+                }
+
+                if (dependencyInstance != null)
+                {
+                    result.Add(dependencyInstance);
+                }
+            }
+            return result;
         }
+            private object CreateByConstructor(Type type)
+            {
+                ConstructorInfo[] constructors = type.GetConstructors()
+                    .OrderBy(constructor => constructor.GetParameters().Length).ToArray();
+                object instance = null;
+                recursionTypes[Thread.CurrentThread.ManagedThreadId].Push(type);
+
+                for (int constructor = 0; constructor < constructors.Length && instance == null; ++constructor)
+                {
+                    try
+                    {
+                        List<object> parameters = new List<object>();
+                        foreach (ParameterInfo constructorParameter in constructors[constructor].GetParameters())
+                        {
+                            parameters.Add(Resolve(constructorParameter.ParameterType));
+                        }
+                        instance = constructors[constructor].Invoke(parameters.ToArray());
+                    }
+                    catch
+                    { }
+                }
+
+                recursionTypes[Thread.CurrentThread.ManagedThreadId].Pop();
+                return instance;
+            }
     }
 }

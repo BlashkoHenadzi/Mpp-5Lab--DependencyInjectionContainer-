@@ -7,7 +7,7 @@ using System.Collections.Concurrent;
 
 namespace Mpp_5Lab__DependencyInjectionContainer_
 {
-    class DependenciesConfiguration : IDependencyConfiguration
+    public class DependenciesConfiguration : IDependencyConfiguration
     {
         ConcurrentDictionary<Type,List<Dependency>> RegisteredDependecies;
 
@@ -43,7 +43,31 @@ namespace Mpp_5Lab__DependencyInjectionContainer_
         }
         public IEnumerable<Dependency> GetDependencyImplementations(Type type)
         {
-            throw new NotImplementedException();//TODO: realize method
+            Type collectionType;
+
+            if (type.IsGenericType)
+            {
+                collectionType = type.GetGenericTypeDefinition();
+            }
+            else
+            {
+                collectionType = type;
+            }
+
+            if (RegisteredDependecies.TryGetValue(collectionType,
+                out List<Dependency> dependencyImplementations))
+            {
+                IEnumerable<Dependency> result =
+                    new List<Dependency>(dependencyImplementations);
+                if (type.IsGenericType)
+                {
+                    result = result.Where(impl => impl.TImplementation.IsGenericTypeDefinition
+                                                    || type.IsAssignableFrom(impl.TImplementation));
+                }
+
+                return result;
+            }
+            return new List<Dependency>();
         }
         public bool Validate(Type dependency, Type dependencyimpl)
         {
